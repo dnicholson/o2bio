@@ -77,7 +77,8 @@ title('\DeltaO_2^{bio}');
 colorbar;
 %caxis(clim);
 
-%%
+%% The difference here looks like it is due to atmospheric pressure 
+% (set to 1 in Cliff paper, but used monthly climatology in Ar sims?)
 crng = 1000.*[-0.01:0.0001:.01];
 subplot(4,1,2);
 Del = 1000.*(O2_bio_cliff - O2_bioST);
@@ -92,7 +93,8 @@ colorbar;
 
 
 
-%%
+%% This version is even further off b/c O2_bio uses the Arpre which doesn't 
+% include the mixing-induced supersat
 subplot(4,1,3);
 Del = 1000.*(O2_bio_cliff - O2_bio);
 [C,h] = contourf(y,z,squeeze(Del(92,:,:))',crng);
@@ -105,7 +107,7 @@ title('\DeltaO_2^{bio}(cliff) - \DeltaO_2^{bio}(satanom)');
 colorbar;
 
 
-%%
+%% O2_bioST includes mixing-induced supersaturation so Del is higher
 subplot(4,1,4);
 Del = 1000.*(O2_bioST - O2_bio);
 [C,h] = contourf(y,z,squeeze(Del(92,:,:))',crng);
