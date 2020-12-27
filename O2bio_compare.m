@@ -1,10 +1,11 @@
+% path to 1atm Ar simlulations
 basepath;
 
 %% load model output
 
-load(fullfile(bpath,'Ar_1atm','Ar_diags.mat'));
-load(fullfile(bpath,'Ar_1atm','Armmavg.mat'));
-load(fullfile(bpath,'Ar_1atm','Areqpremmavg.mat'));
+load(fullfile(bpath,'Ar_diags.mat'));
+load(fullfile(bpath,'Armmavg.mat'));
+load(fullfile(bpath,'Areqpremmavg.mat'));
 load('PO4mmavg.mat','PO4');
 load('PO4premmavg.mat','PO4premmavg');
 load('PIC_OU_oxygen_decomp.mat','O2_glob','O2eq_glob');
