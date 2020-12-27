@@ -2,8 +2,9 @@ basepath;
 
 %% load model output
 
-load('Ar_diags.mat');
-load('Areqpremmavg.mat');
+load(fullfile(bpath,'Ar_1atm','Ar_diags.mat'));
+load(fullfile(bpath,'Ar_1atm','Armmavg.mat'));
+load(fullfile(bpath,'Ar_1atm','Areqpremmavg.mat'));
 load('PO4mmavg.mat','PO4');
 load('PO4premmavg.mat','PO4premmavg');
 load('PIC_OU_oxygen_decomp.mat','O2_glob','O2eq_glob');
@@ -22,16 +23,17 @@ PO4prea = 1e-3.*mean(PO4premmavg,4);
 O2 = O2_glob{1};
 O2eq = O2eq_glob{1};
 
-% Argon tracers
-DAr = 1+mean(TRsatanommm,4);
+% Ar saturation using in situ vs preformed equilibrium concentrations
+DAr = mean(Armmavg./TReqmm,4);
+
 Areqpre = Areqpremmavg;
-% surface sat is treated as passive tracer -- no mixing supesat
-DArpre = mean(TRmm./Areqpre,4);
-% sat calculated from T/S
-DArST = mean(TRmm./TReqmm,4);
+% surface sat is treated as passive tracer -- no mixing supesaturation
+DArpre = mean(Armmavg./Areqpre,4);
+
 
 
 O2_bio_cliff = O2_bio_glob{1};
+O2_phy_cliff = O2_phy_glob{1};
 
 %% in situ sat approach
 Tm = mean(Tbc,4);
@@ -42,14 +44,15 @@ O2eqST = mean(o2satfunc(Tbc,Sbc),4);
 
 % Two ways to calculate O2_bio using Ar
 % negative values for resp
-O2_bio = O2 - DAr.*O2eq;
-O2_bioST = O2 - DArST.*O2eqST;
+O2_bio = O2 - DAr.*O2eqST;
+%O2_bioST = O2 - DArST.*O2eqST;
+%O2_bioST = O2 - DAr.*O2eqST;
 
-%O2_biopre = O2 - DArpre.*O2eqST;
+O2_biopre = O2 - DArpre.*O2eqST;
 
 % compare difference between O2_bio estimates
 del_O2_bio = O2_bio_cliff-O2_bio;
-del_O2_bioST = O2_bio_cliff-O2_bioST;
+%del_O2_bioST = O2_bio_cliff-O2_bioST;
 % pos values corresponds to preformed P
 O2_bio_star = O2_bio - PO4a.*rOP;
 % PO4 preformed, converted to O2 units (pos values)
@@ -67,56 +70,84 @@ crng = [-200:10:20];
 
 B = PO4a.*rOP;
 figure;
-subplot(4,1,1);
+subplot(3,1,1);
 [C,h] = contourf(y,z,squeeze(1000.*O2_bio_cliff(92,:,:))',crng);
 h.LineStyle = 'none';
 ax1 = gca;
 ax1.Colormap = cmocean('haline');
 set(gca,'YDir','Reverse','TickDir','out','LineWidth',1);
-title('\DeltaO_2^{bio}');
+title('\DeltaO_2^{bio} (mmol m^{-3})');
 colorbar;
 %caxis(clim);
 
-%% The difference here looks like it is due to atmospheric pressure 
+%% This should be the most consistent version w/ Cliff paper
+% Includs 
+% Units are mmol m-3
 % (set to 1 in Cliff paper, but used monthly climatology in Ar sims?)
+%
 crng = 1000.*[-0.01:0.0001:.01];
-subplot(4,1,2);
-Del = 1000.*(O2_bio_cliff - O2_bioST);
+subplot(3,1,2);
+Del = 1000.*(O2_bio_cliff - O2_bio);
 [C,h] = contourf(y,z,squeeze(Del(92,:,:))',crng);
 h.LineStyle = 'none';
 ax2 = gca;
 ax2.Colormap = cm;
-caxis([-3 3]);
+caxis([-1 1]);
 set(gca,'YDir','Reverse','TickDir','out','LineWidth',1);
-title('\DeltaO_2^{bio}(cliff) - \DeltaO_2^{bio}(STsol)');
+title('\DeltaO_2^{bio}(cliff) - \DeltaO_2^{bio} (mmol m^{-3})');
 colorbar;
 
 
 
 %% This version is even further off b/c O2_bio uses the Arpre which doesn't 
 % include the mixing-induced supersat
-subplot(4,1,3);
-Del = 1000.*(O2_bio_cliff - O2_bio);
+subplot(3,1,3);
+Del = 1000.*(O2_bio_cliff - O2_biopre);
 [C,h] = contourf(y,z,squeeze(Del(92,:,:))',crng);
 h.LineStyle = 'none';
 ax3 = gca;
 colormap(ax3,cm);
 caxis([-3 3]);
 set(gca,'YDir','Reverse','TickDir','out','LineWidth',1);
-title('\DeltaO_2^{bio}(cliff) - \DeltaO_2^{bio}(satanom)');
+title('\DeltaO_2^{bio}(cliff) - \DeltaO_2^{bio}(pref) (mmol m^{-3})');
 colorbar;
 
-
-%% O2_bioST includes mixing-induced supersaturation so Del is higher
-subplot(4,1,4);
-Del = 1000.*(O2_bioST - O2_bio);
+%% Second figure shows Ar sat from 1atm run
+figure;
+% Ar % saturation 
+subplot(3,1,1);
+Del = 100.*(DAr-1);
 [C,h] = contourf(y,z,squeeze(Del(92,:,:))',crng);
 h.LineStyle = 'none';
 ax3 = gca;
 colormap(ax3,cm);
 set(gca,'YDir','Reverse','TickDir','out','LineWidth',1);
-title('\DeltaO_2^{bio}(STsol) - \DeltaO_2^{bio}(satanom)');
-caxis([-3 3]);
+title('\DeltaAr');
+caxis([-4 4]);
+colorbar;
+
+% DAr_pre (%) This version removes the mixing supersat
+subplot(3,1,2);
+Del = 100.*(DArpre-1);
+[C,h] = contourf(y,z,squeeze(Del(92,:,:))',crng);
+h.LineStyle = 'none';
+ax3 = gca;
+colormap(ax3,cm);
+set(gca,'YDir','Reverse','TickDir','out','LineWidth',1);
+title('\DeltaAr_{pref}');
+caxis([-4 4]);
+colorbar;
+% O2_phy vs DAr (%): this is the difference between 'abiotic O2' and Ar
+subplot(3,1,3);
+
+Del = 100.*(DAr-1)-100.*(O2_phy_cliff./O2eqST-1);
+[C,h] = contourf(y,z,squeeze(Del(92,:,:))',crng);
+h.LineStyle = 'none';
+ax3 = gca;
+colormap(ax3,cm);
+set(gca,'YDir','Reverse','TickDir','out','LineWidth',1);
+title('\DeltaAr-\DeltaO2_{phy}');
+caxis([-0.5 0.5]);
 colorbar;
 %%
 function o2sat=o2satfunc(T,S)
